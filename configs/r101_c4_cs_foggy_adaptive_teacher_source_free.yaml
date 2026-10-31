@@ -1,0 +1,79 @@
+MODEL:
+  META_ARCHITECTURE: "SourceFreeAdaptiveTeacherGeneralizedRCNN"
+  # WEIGHTS: logs/r_101_c4_cs_source/levir_ship/model_0016999.pth
+  WEIGHTS: logs/hrrsd_ssdd/stage1/0.01-4/model_0002999.pth
+  MASK_ON: False
+  RESNETS:
+    DEPTH: 101
+    NORM: BN
+  ROI_HEADS:
+    NAME: "SourceFreeAdaptiveTeacherStandardROIHeads"
+    NUM_CLASSES: 1
+    BATCH_SIZE_PER_IMAGE: 256
+    # SCORE_THRESH_TEST: 45
+  ROI_BOX_HEAD:
+    NAME: "FastRCNNConvFCHead"
+    NUM_FC: 2
+    FC_DIM: 2048
+    POOLER_RESOLUTION: 7
+  ANCHOR_GENERATOR:
+    SIZES: [ [ 64, 128, 256, 512 ] ]
+  RPN:
+    PRE_NMS_TOPK_TEST: 6000
+    POST_NMS_TOPK_TEST: 1000
+    BATCH_SIZE_PER_IMAGE: 256
+  PROPOSAL_GENERATOR:
+    NAME: "PseudoLabRPN"
+INPUT:
+  MIN_SIZE_TRAIN: [600]
+  MIN_SIZE_TEST: 600
+OUTPUT_DIR: logs/hrrsd_ssdd/stage2-
+DATASETS:
+  # TRAIN: ("cityscapes_instancesonly_train",)
+  # TRAIN_TARGET: ("data_air_train",)
+  # TEST: ("data_air_val",)
+  TRAIN: ("ssdd_train",)
+  TRAIN_TARGET: ("ssdd_train",)
+  TEST: ("ssdd_val",)
+SOLVER:
+  STEPS: (60000, 80000, 90000, 360000)
+  # FACTOR_LIST: (1, 1, 1, 1, 1)
+  MAX_ITER: 8000
+  WARMUP_ITERS: 1000
+  CHECKPOINT_PERIOD: 500
+  IMS_PER_BATCH: 4
+  # BASE_LR: 0.025
+  BASE_LR: 0.0001
+TEST:
+  EVAL_PERIOD: 500
+  IMS_PER_BATCH: 1
+DATALOADER:
+  SUP_PERCENT: 100.0
+SEMISUPNET:
+  # tau_initial of ATS, Eq. (10)
+  BBOX_THRESHOLD: 0.6
+  TEACHER_UPDATE_ITER: 1
+  BURN_UP_STEP: 2000 # 20000
+  EMA_KEEP_RATE: 0.9996
+  UNSUP_LOSS_WEIGHT: 1.0
+  SUP_LOSS_WEIGHT: 1.0
+  # DIS_TYPE: "res4" #["concate","p2","multi"]
+  DIS_TYPE: "res4"
+  # INS_DC: False
+WEAK_STRONG_AUGMENT: True
+# ENHANCE: False
+VIS_PERIOD: 100
+VERSION: 2
+SEED: 42
+# CLSS and ATS, Section 4.2
+SFDA:
+  NUM_STAGES: 10
+  EPOCHS_PER_STAGE: 4
+  TOPK_CONF: 5
+  TAU_LOOSE: 0.5
+  TAU_INIT: 0.6
+  TAU_MIN: 0.5
+  TAU_MAX: 0.7
+  PHI_SCALE: 0.2
+  PHI_PROGRESS: 0.2
+TRAINER: "source_free_adaptive_teacher_cl"
